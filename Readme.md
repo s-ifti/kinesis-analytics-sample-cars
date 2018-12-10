@@ -24,7 +24,7 @@ mvn package
 
 ### Build (Using AWS Code Pipeline)
 
-As an alternate to building locally, you can use provided Cloud Formation template to build sample project jar files in the cloud (this will also generate  flink kinesis connector jar for any future projects use).
+As an alternate to building locally, you can use provided Cloud Formation template (flink-1.6.2-build-sample.yml) to build sample project jar files in the cloud (this will also generate  flink kinesis connector jar for any future projects use).
 
 Once Code Build is completed, simply check the output artifacts of the cloud formation stack and copy the built jar files from the S3 bucket to locally or to another S3 folder for deployment as kinesis analytics service.
 
@@ -140,8 +140,21 @@ You can use following as an example json passed to create-application CLI call t
 
 ### Deployment Notes
 
+You can use following CLI to create this app :
 
-This sample uses parallelism of 4, either reduce that in code or
+````
+export TEST_REGION=us-east-1
+export APP_NAME=my-cars-app
+$ aws kinesisanalyticsv2 create-application --application-name $TEST_REGION-$APP_NAME  --runtime-environment FLINK-1_6 --service-execution-role arn:aws:iam::xxxxxxxxxx:role/KinesisStreamKAJATest --cli-input-json file://create-car-speed-test-$TEST_REGION-$APP_NAME.json --region $TEST_REGION
+
+$ aws kinesisanalyticsv2 start-application --application-name $TEST_REGION-$APP_NAME  --run-configuration "{}" --region $TEST_REGION
+
+$ aws kinesisanalyticsv2 describe-application --application-name $TEST_REGION-$APP_NAME   --region $TEST_REGION
+
+
+````
+
+This sample uses parallelism of 4, either reduce that in code as needed, or
 use following configuration when creating Kinesis Analytics app
 
 ````
