@@ -157,7 +157,9 @@ $ aws kinesisanalyticsv2 describe-application --application-name $TEST_REGION-$A
 ````
 
 
-In above create-car-sample-app.json file can be initialized with following content: 
+create-car-sample-app.json file can be initialized with following content: 
+Replace ServiceExecutionRole with the IAM role created in previous steps.
+Update BucketARN and FileKey to the location in S3 that contains the jar file for this sample.
 
 
 `````
