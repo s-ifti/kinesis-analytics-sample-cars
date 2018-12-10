@@ -1,6 +1,6 @@
-### Flink sample using Cars
+### Flink sample 
 
-This maven project implements a simple Flink based app for processing a sample cars dataset.
+This maven project implements a simple Flink based app for processing a simulated cars dataset.
 
 
 ### Build (Locally)
