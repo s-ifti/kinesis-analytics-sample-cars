@@ -80,9 +80,84 @@ print('DONE')
 
 
 
-### AWS Create App cli JSON skeleton
+### AWS Kinesis Analytics Create App via AWS CLI
 
-You can use following as an example json passed to create-application CLI call to AWS
+Before issuing API call to create kinesis analytics app, make sure that you have a service execution role propertly configured.
+
+Create an IAM role, and 
+add following permissions:
+
+* Add Trust Relationship with service kinesisanalytics.amazonaws.com
+* Allow CW logs to be published by Kinesis Analytics service:
+````
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "logs:DescribeLogGroups",
+                "logs:DescribeLogStreams",
+                "logs:PutLogEvents"
+            ],
+            "Effect": "Allow",
+            "Resource": "*"
+        }
+    ]
+}
+````
+* Allow CW metrics to be published by app using custom sink for CW metric
+````
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "cloudwatch:PutMetricData"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "*"
+            ]
+        }
+    ]
+}
+````
+* Allow Kinesis operations
+````
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": "kinesis:*",
+            "Resource": "*"
+        }
+    ]
+}
+````
+
+The permissions provided above uses broader permissions for simplicity, you can further restrict permissions to specific resouce and specific action as needed.
+
+The service execution role requires permission to allow publishing of cloudwatch metric from the app only because the app uses a custom cloudwatch metric sink to write avg speed of car seen within last 30 seconds to a CW metric, this metric is written within namespace KDA/MyFlink/Events.
+
+
+You can use following CLI commands to create this app :
+
+````
+export TEST_REGION=us-east-1
+export APP_NAME=my-cars-app
+$ aws kinesisanalyticsv2 create-application --application-name $TEST_REGION-$APP_NAME  --runtime-environment FLINK-1_6 --service-execution-role arn:aws:iam::xxxxxxxxxx:role/KinesisStreamKAJATest --cli-input-json file://create-car-sample-app.json --region $TEST_REGION
+
+$ aws kinesisanalyticsv2 start-application --application-name $TEST_REGION-$APP_NAME  --run-configuration "{}" --region $TEST_REGION
+
+$ aws kinesisanalyticsv2 describe-application --application-name $TEST_REGION-$APP_NAME   --region $TEST_REGION
+
+
+````
+
+
+In above create-car-sample-app.json file can be initialized with following content: 
 
 
 `````
@@ -140,20 +215,6 @@ You can use following as an example json passed to create-application CLI call t
 
 ### Deployment Notes
 
-You can use following CLI to create this app :
-
-````
-export TEST_REGION=us-east-1
-export APP_NAME=my-cars-app
-$ aws kinesisanalyticsv2 create-application --application-name $TEST_REGION-$APP_NAME  --runtime-environment FLINK-1_6 --service-execution-role arn:aws:iam::xxxxxxxxxx:role/KinesisStreamKAJATest --cli-input-json file://create-car-speed-test-$TEST_REGION-$APP_NAME.json --region $TEST_REGION
-
-$ aws kinesisanalyticsv2 start-application --application-name $TEST_REGION-$APP_NAME  --run-configuration "{}" --region $TEST_REGION
-
-$ aws kinesisanalyticsv2 describe-application --application-name $TEST_REGION-$APP_NAME   --region $TEST_REGION
-
-
-````
-
 This sample uses parallelism of 4, either reduce that in code as needed, or
 use following configuration when creating Kinesis Analytics app
 
@@ -167,63 +228,8 @@ use following configuration when creating Kinesis Analytics app
          }
 ````
 
-Add following permissions to the provided service execution role:
-
-* Add Trust Relationship with service kinesisanalytics.amazonaws.com
-* Allow CW logs to be published by Kinesis Analytics service:
-````
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": [
-                "logs:DescribeLogGroups",
-                "logs:DescribeLogStreams",
-                "logs:PutLogEvents"
-            ],
-            "Effect": "Allow",
-            "Resource": "*"
-        }
-    ]
-}
-````
-* Allow CW metrics to be published by app using custom sink for CW metric
-````
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": [
-                "cloudwatch:PutMetricData"
-            ],
-            "Effect": "Allow",
-            "Resource": [
-                "*"
-            ]
-        }
-    ]
-}
-````
-* Allow Kinesis operations
-````
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "VisualEditor0",
-            "Effect": "Allow",
-            "Action": "kinesis:*",
-            "Resource": "*"
-        }
-    ]
-}
-````
-
-The sample above uses broader permissions, you can further restrict permissions to specific resouce and specific action as needed.
-
-The service execution role "arn:aws:iam::xxxxxxx:role/KinesisStreamAnalyticsTestRole" requires permission to allow publishing of cloudwatch metric from the app, this is because the app uses a custom cloudwatch metric sink to write avg speed of car seen within last 30 seconds to a CW metric, metric is written within namespace KDA/MyFlink/Events.
 
 
+### TODO
 
-###TODO: 
 Automate Kinesis Analytics App Deployment and Input Stream creation via Cloud formation template.
