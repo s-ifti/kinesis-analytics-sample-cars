@@ -8,18 +8,28 @@ sample app uses a cloudwatch metric sink to write avg speed of car seen within l
 
 The package depends on flink kinesis connector that is not available in Maven repository, you can build it
 locally by downloading flink 1.6.2 source.
+Once you have compliled and added flink kinesis connector add it to local maven repository by using following command-line:
 
+````
+ mvn install:install-file    -Dfile=/Users/ahmedmsy/Downloads/flink-connector-kinesis_2.11-1.6.2.jar -DgroupId=org.apache.flink -DartifactId=flink-connector-kinesis_2.11 -Dversion=1.6.2 -Dpackaging=jar -DgeneratePom=true
+
+````
+
+After that cd to this repository and issue following
 ````
 mvn package
 
-target folder will contain kinesis-analytics-sample-cars-1.0.jar
+
 ````
+./target folder will contain the shaded kinesis-analytics-sample-cars-1.0.jar ready for deployment to AWS Kinesis Analytics as a Java App.
+
 ### Build (Using AWS Code Pipeline)
 
-As an alternate to building locally, you can use provided Cloud Formation template to build sample project (including flink kinesis connector for future project).
+As an alternate to building locally, you can use provided Cloud Formation template to build sample project jar files in the cloud (this will also generate  flink kinesis connector jar for any future projects use).
+
 Once Code Build is completed, simply check the output artifacts of the cloud formation stack and copy the built jar files from the S3 bucket to locally or to another S3 folder for deployment as kinesis analytics service.
 
-You can also directly use the generated jar file (uploaded to the S3 bucket by Code pipeline) to be executed as Kinesis Analytics Java (Flink) app.
+You can also skip copyin the jar file and use the generated jar file (uploaded to the S3 bucket by Code pipeline) to be executed as Kinesis Analytics Java (Flink) app.
 
 
 ### Deployment
@@ -137,4 +147,7 @@ You can use following as an example json passed to create-application CLI call t
   ]
 }
 
-````
+`````
+
+###TODO: 
+Automate Kinesis Analytics App Deployment and Input Stream creation via Cloud formation template.
