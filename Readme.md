@@ -128,7 +128,6 @@ add following permissions:
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "VisualEditor0",
             "Effect": "Allow",
             "Action": "kinesis:*",
             "Resource": "*"
@@ -158,58 +157,62 @@ $ aws kinesisanalyticsv2 describe-application --application-name $TEST_REGION-$A
 
 
 create-car-sample-app.json file can be initialized with following content: 
-Replace ServiceExecutionRole with the IAM role created in previous steps.
+
+Note: Replace ServiceExecutionRole with the IAM role created in previous steps.
 Update BucketARN and FileKey to the location in S3 that contains the jar file for this sample.
 
 
 `````
-
 {
   "ApplicationName": "mycar-sample",
-    "ApplicationDescription": "cars sample",
-    "RuntimeEnvironment": "FLINK-1_6",
-    "ServiceExecutionRole": "arn:aws:iam::xxxxxxx:role/KinesisStreamAnalyticsTestRole",
-    "ApplicationConfiguration": {
-        "ApplicationCodeConfiguration": {
-            "CodeContent": {
-                "S3ContentLocation":{
-                              "BucketARN": "arn:aws:s3:::xxxxxx-kda-apps",
-                              "FileKey": "my-cars-flink-sample-1.0.jar"
-                }
-            },
-            "CodeContentType": "ZIPFILE"
-        },
-       "FlinkApplicationConfiguration": 
-      {"CheckpointConfiguration": 
-        {"CheckpointInterval": 60000, 
-         "CheckpointingEnabled": false, 
-         "ConfigurationType": "CUSTOM", 
-         "MinPauseBetweenCheckpoints": 5000}, 
-       "MonitoringConfiguration": 
-        {"ConfigurationType": "CUSTOM", 
-         "LogLevel": "INFO", 
-         "MetricsLevel": "TASK"}, 
-       "ParallelismConfiguration": 
-        {"AutoScalingEnabled": true, 
-         "ConfigurationType": "CUSTOM", 
-         "CurrentParallelism": 4, 
-         "Parallelism": 4, 
-         "ParallelismPerKPU": 2}
-      },
-    "EnvironmentProperties": {
-            "PropertyGroups": [
-                {
-                    "PropertyGroupId": "CarProperties", 
-                    "PropertyMap": {
-                        "metricTag": "gamma"
-                    }
-                }
-            ]
+  "ApplicationDescription": "cars sample",
+  "RuntimeEnvironment": "FLINK-1_6",
+  "ServiceExecutionRole": "arn:aws:iam::xxxxxxx:role/KinesisStreamAnalyticsTestRole",
+  "ApplicationConfiguration": {
+    "ApplicationCodeConfiguration": {
+      "CodeContent": {
+        "S3ContentLocation": {
+          "BucketARN": "arn:aws:s3:::xxxxxx-kda-apps",
+          "FileKey": "my-cars-flink-sample-1.0.jar"
         }
+      },
+      "CodeContentType": "ZIPFILE"
     },
- "CloudWatchLoggingOptions": 
-  [
-    {"LogStreamARN": "arn:aws:logs:us-east-1:xxxxx:log-group:my-flink-group:log-stream:my-car-test"}
+    "FlinkApplicationConfiguration": {
+      "CheckpointConfiguration": {
+        "CheckpointInterval": 60000,
+        "CheckpointingEnabled": false,
+        "ConfigurationType": "CUSTOM",
+        "MinPauseBetweenCheckpoints": 5000
+      },
+      "MonitoringConfiguration": {
+        "ConfigurationType": "CUSTOM",
+        "LogLevel": "INFO",
+        "MetricsLevel": "TASK"
+      },
+      "ParallelismConfiguration": {
+        "AutoScalingEnabled": true,
+        "ConfigurationType": "CUSTOM",
+        "CurrentParallelism": 4,
+        "Parallelism": 4,
+        "ParallelismPerKPU": 2
+      }
+    },
+    "EnvironmentProperties": {
+      "PropertyGroups": [
+        {
+          "PropertyGroupId": "CarProperties",
+          "PropertyMap": {
+            "metricTag": "gamma"
+          }
+        }
+      ]
+    }
+  },
+  "CloudWatchLoggingOptions": [
+    {
+      "LogStreamARN": "arn:aws:logs:us-east-1:xxxxx:log-group:my-flink-group:log-stream:my-car-test"
+    }
   ]
 }
 
@@ -221,13 +224,13 @@ This sample uses parallelism of 4, either reduce that in code as needed, or
 use following configuration when creating Kinesis Analytics app
 
 ````
-"ParallelismConfiguration": 
-        {"AutoScalingEnabled": true, 
+"ParallelismConfiguration":  {
+         "AutoScalingEnabled": true, 
          "ConfigurationType": "CUSTOM", 
          "CurrentParallelism": 4, 
          "Parallelism": 4, 
          "ParallelismPerKPU": 2
-         }
+}
 ````
 
 
