@@ -1,8 +1,7 @@
 ### Flink sample using Cars
 
-This maven project implements a simple Flink app processing Cars input dataset.
-You will need to use an IAM role that allows publishing cloudwatch metric, as this
-sample app uses a cloudwatch metric sink to write avg speed of car seen within last 30 seconds. (Metric is written within namespace KDA/MyFlink/Events)
+This maven project implements a simple Flink based app for processing a sample cars dataset.
+
 
 ### Build (Locally)
 
@@ -15,7 +14,7 @@ Once you have compliled and added flink kinesis connector add it to local maven 
 
 ````
 
-After that cd to this repository and issue following
+After that cd to this repository and build using maven
 ````
 mvn package
 
@@ -33,6 +32,8 @@ You can also skip copyin the jar file and use the generated jar file (uploaded t
 
 
 ### Deployment
+When deploying this app to AWS Kinesis Analytics as java app, you will need to use an IAM role with permissions to write to cloudwatch metrics, the app writes avg speed of car seen within last 30 seconds to a cloudwatch metric. (Metric is written within namespace KDA/MyFlink/Events). 
+
 This sample uses parallelism of 4, either reduce that in code or
 use following configuration when creating Kinesis Analytics app
 "ParallelismConfiguration": 
@@ -148,6 +149,62 @@ You can use following as an example json passed to create-application CLI call t
 }
 
 `````
+In the above create application api provided service execution role "arn:aws:iam::xxxxxxx:role/KinesisStreamAnalyticsTestRole" will require permission to allow publishing of cloudwatch metric, the app uses a cloudwatch metric sink to write avg speed of car seen within last 30 seconds to a CW metric. Metric is written within namespace KDA/MyFlink/Events.
+
+Add following permissions to the provided role:
+
+* Add Trust Relationship with service kinesisanalytics.amazonaws.com
+* Allow CW logs to be published by Kinesis Analytics service:
+````
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "logs:DescribeLogGroups",
+                "logs:DescribeLogStreams",
+                "logs:PutLogEvents"
+            ],
+            "Effect": "Allow",
+            "Resource": "*"
+        }
+    ]
+}
+````
+* Allow CW metrics to be published by app using custom sink for CW metric
+````
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "cloudwatch:PutMetricData",
+                "ec2:DescribeTags"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "*"
+            ]
+        }
+    ]
+}
+````
+* Allow Kinesis operations
+````
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": "kinesis:*",
+            "Resource": "*"
+        }
+    ]
+}
+````
+
+You can restrict permissions to specific resouce and specific action as needed.
 
 ###TODO: 
 Automate Kinesis Analytics App Deployment and Input Stream creation via Cloud formation template.
