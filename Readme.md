@@ -11,7 +11,7 @@ locally by downloading flink 1.6.2 source.
 Once you have compliled and added flink kinesis connector add it to local maven repository by using following command-line:
 
 ````
- mvn install:install-file    -Dfile=/Users/ahmedmsy/Downloads/flink-connector-kinesis_2.11-1.6.2.jar -DgroupId=org.apache.flink -DartifactId=flink-connector-kinesis_2.11 -Dversion=1.6.2 -Dpackaging=jar -DgeneratePom=true
+ mvn install:install-file    -Dfile=/Users/myusername/Downloads/flink-connector-kinesis_2.11-1.6.2.jar -DgroupId=org.apache.flink -DartifactId=flink-connector-kinesis_2.11 -Dversion=1.6.2 -Dpackaging=jar -DgeneratePom=true
 
 ````
 
