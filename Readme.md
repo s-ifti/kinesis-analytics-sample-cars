@@ -31,18 +31,6 @@ Once Code Build is completed, simply check the output artifacts of the cloud for
 You can also skip copyin the jar file and use the generated jar file (uploaded to the S3 bucket by Code pipeline) to be executed as Kinesis Analytics Java (Flink) app.
 
 
-### Deployment
-When deploying this app to AWS Kinesis Analytics as java app, you will need to use an IAM role with permissions to write to cloudwatch metrics, the app writes avg speed of car seen within last 30 seconds to a cloudwatch metric. (Metric is written within namespace KDA/MyFlink/Events). 
-
-This sample uses parallelism of 4, either reduce that in code or
-use following configuration when creating Kinesis Analytics app
-"ParallelismConfiguration": 
-        {"AutoScalingEnabled": true, 
-         "ConfigurationType": "CUSTOM", 
-         "CurrentParallelism": 4, 
-         "Parallelism": 4, 
-         "ParallelismPerKPU": 2
-         }
 
 ### Simulating source stream
 
@@ -149,9 +137,24 @@ You can use following as an example json passed to create-application CLI call t
 }
 
 `````
-In the above create application api provided service execution role "arn:aws:iam::xxxxxxx:role/KinesisStreamAnalyticsTestRole" will require permission to allow publishing of cloudwatch metric, the app uses a cloudwatch metric sink to write avg speed of car seen within last 30 seconds to a CW metric. Metric is written within namespace KDA/MyFlink/Events.
 
-Add following permissions to the provided role:
+### Deployment Notes
+
+
+This sample uses parallelism of 4, either reduce that in code or
+use following configuration when creating Kinesis Analytics app
+
+````
+"ParallelismConfiguration": 
+        {"AutoScalingEnabled": true, 
+         "ConfigurationType": "CUSTOM", 
+         "CurrentParallelism": 4, 
+         "Parallelism": 4, 
+         "ParallelismPerKPU": 2
+         }
+````
+
+Add following permissions to the provided service execution role:
 
 * Add Trust Relationship with service kinesisanalytics.amazonaws.com
 * Allow CW logs to be published by Kinesis Analytics service:
@@ -178,8 +181,7 @@ Add following permissions to the provided role:
     "Statement": [
         {
             "Action": [
-                "cloudwatch:PutMetricData",
-                "ec2:DescribeTags"
+                "cloudwatch:PutMetricData"
             ],
             "Effect": "Allow",
             "Resource": [
@@ -204,7 +206,11 @@ Add following permissions to the provided role:
 }
 ````
 
-You can restrict permissions to specific resouce and specific action as needed.
+The sample above uses broader permissions, you can further restrict permissions to specific resouce and specific action as needed.
+
+The service execution role "arn:aws:iam::xxxxxxx:role/KinesisStreamAnalyticsTestRole" requires permission to allow publishing of cloudwatch metric from the app, this is because the app uses a custom cloudwatch metric sink to write avg speed of car seen within last 30 seconds to a CW metric, metric is written within namespace KDA/MyFlink/Events.
+
+
 
 ###TODO: 
 Automate Kinesis Analytics App Deployment and Input Stream creation via Cloud formation template.
