@@ -4,13 +4,23 @@ This maven project implements a simple Flink app processing Cars input dataset.
 You will need to use an IAM role that allows publishing cloudwatch metric, as this
 sample app uses a cloudwatch metric sink to write avg speed of car seen within last 30 seconds. (Metric is written within namespace KDA/MyFlink/Events)
 
-### Build
+### Build (Locally)
+
+The package depends on flink kinesis connector that is not available in Maven repository, you can build it
+locally by downloading flink 1.6.2 source.
 
 ````
 mvn package
 
 target folder will contain kinesis-analytics-sample-cars-1.0.jar
 ````
+### Build (Using AWS Code Pipeline)
+
+As an alternate to building locally, you can use provided Cloud Formation template to build sample project (including flink kinesis connector for future project).
+Once Code Build is completed, simply check the output artifacts of the cloud formation stack and copy the built jar files from the S3 bucket to locally or to another S3 folder for deployment as kinesis analytics service.
+
+You can also directly use the generated jar file (uploaded to the S3 bucket by Code pipeline) to be executed as Kinesis Analytics Java (Flink) app.
+
 
 ### Deployment
 This sample uses parallelism of 4, either reduce that in code or

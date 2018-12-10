@@ -1,0 +1,289 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Build Kinesis Analytics Sample Cars App
+
+Parameters:
+  FlinkVersion:
+    Description: Flink version to build
+    Type: String
+    Default: 1.6.2
+    AllowedPattern: \d\.\d\.\d
+
+Outputs:
+  ArtifactBucket:
+    Description: Bucket containing the compiled artifacts
+    Value: !GetAtt ArtifactBucket.DomainName
+
+  KinesisAnalyticsJarCopyCommand:
+    Description: Command for copying the generated jar files
+    Value: !Sub aws s3 cp s3://${ArtifactBucket}/artifacts/*.jar .
+
+Resources:
+  BuildPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    DependsOn: DownloadSources
+    Properties:
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: FlinkSourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: S3
+              OutputArtifacts:
+                - Name: FlinkSource
+              Configuration:
+                S3Bucket: !Ref ArtifactBucket
+                S3ObjectKey: sources/flink-src.zip
+              RunOrder: 1
+            - Name: SampleArtifactsSourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: S3
+              OutputArtifacts:
+                - Name: SampleArtifactsSource
+              Configuration:
+                S3Bucket: !Ref ArtifactBucket
+                S3ObjectKey: sources/kinesis-analytics-sample-cars.zip
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: BuildKinesisConnector
+              InputArtifacts:
+                - Name: FlinkSource
+              OutputArtifacts:
+                - Name: KinesisConnectorOutput
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref KinesisConnectorBuildProject
+              RunOrder: 1
+            - Name: BuildKinesisAnalyticsSample
+              InputArtifacts:
+                - Name: SampleArtifactsSource
+              OutputArtifacts:
+                - Name: KinesisAnalyticsSample
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref KinesisAnalyticsSampleBuildProject
+              RunOrder: 2
+
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+
+  DownloadSources:
+    Type: Custom::DownloadSources
+    Properties:
+      ServiceToken: !GetAtt DownloadSourcesFunction.Arn
+
+  DownloadSourcesFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: !Sub |
+          import boto3
+          import urllib2
+          import cfnresponse
+
+          def handler(event, context):
+            s3 = boto3.client('s3')
+
+            flink = urllib2.urlopen('https://github.com/apache/flink/archive/release-${FlinkVersion}.zip')
+            s3.put_object(Bucket='${ArtifactBucket}',Key='sources/flink-src.zip',Body=flink.read())
+
+            runtime_artifacts = urllib2.urlopen('https://github.com/s-ifti/kinesis-analytics-sample-cars/archive/master.zip')
+            s3.put_object(Bucket='${ArtifactBucket}',Key='sources/kinesis-analytics-sample-cars.zip',Body=runtime_artifacts.read())
+
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+      Runtime: python2.7
+      Timeout: 60
+
+  KinesisConnectorBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/java:openjdk-8
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+          version: 0.1
+
+          phases:
+            pre_build:
+              commands:
+                - curl -s https://archive.apache.org/dist/maven/maven-3/3.2.5/binaries/apache-maven-3.2.5-bin.tar.gz | tar xz -C /tmp/
+            build:
+              commands:
+                - cd flink-*/flink-connectors/flink-connector-kinesis && /tmp/apache-maven-3.2.5/bin/mvn clean package -B -DskipTests -Dmaven.javadoc.skip=true -Dcheckstyle.skip=true -Pinclude-kinesis -Dhadoop-two.version=2.8.3
+                - cd flink-*/flink-connectors/flink-connector-kinesis &&  /tmp/apache-maven-3.2.5/bin/mvn flatten:flatten -DflattenedPomFilename=pom.xml.flattened
+            post_build:
+              commands:
+                - aws s3 cp --recursive --quiet --exclude '*' --include '*.jar' --include '*.pom*xml*' --exclude 'original-*' flink-*/flink-connectors/flink-connector-kinesis/target s3://${ArtifactBucket}/artifacts/
+
+          artifacts:
+            files:
+              - flink-*/flink-connectors/flink-connector-kinesis/target/flink-connector-kinesis*.jar
+              - flink-*/flink-connectors/flink-connector-kinesis/target/flink-connector-kinesis*.pom.xml
+            discard-paths: yes
+      TimeoutInMinutes: 30
+
+  KinesisAnalyticsSampleBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/java:openjdk-8
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+          version: 0.1
+
+          phases:
+            pre_build:
+              commands:
+                - aws configure set s3.signature_version s3v4
+                - aws s3 cp --quiet --recursive --exclude '*' --include 'flink-connector-kinesis*' s3://${ArtifactBucket}/artifacts/ /tmp
+                - for jar in /tmp/flink-connector-kinesis*.jar; do mvn install:install-file -Dfile=$jar -DgroupId=org.apache.flink -DartifactId=flink-connector-kinesis_2.11 -Dversion=1.6.2 -Dpackaging=jar -DgeneratePom=true; done
+            build:
+              commands:
+                - cd kinesis-analytics-sample-*/ && mvn clean package -B -Dflink.version=${FlinkVersion}
+            post_build:
+              commands:
+                - aws s3 cp --quiet --recursive --exclude '*' --include '*.jar' --exclude 'original-*' kinesis-analytics-sample-*/target s3://${ArtifactBucket}/artifacts/
+
+          artifacts:
+            files:
+              - kinesis-analytics-sample-*/target/*.jar
+            discard-paths: yes
+      TimeoutInMinutes: 30
+
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+
+
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "codepipeline.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource:
+                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+              - Resource:
+                  - !Sub arn:aws:s3:::${ArtifactBucket}
+                Effect: Allow
+                Action:
+                  - s3:GetBucketVersioning
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                  - cloudformation:*
+                  - iam:PassRole
+
+
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "codebuild.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - ecr:GetAuthorizationToken
+              - Resource: !Sub arn:aws:s3:::${ArtifactBucket}/*
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:GetObjectVersion
+              - Resource: !Sub arn:aws:s3:::${ArtifactBucket}
+                Effect: Allow
+                Action:
+                  - s3:ListBucket
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: root
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Resource: arn:aws:logs:*:*:*
+            Effect: Allow
+            Action:
+            - logs:*
+          - Resource: !Sub arn:aws:s3:::${ArtifactBucket}/*
+            Effect: Allow
+            Action:
+              - s3:PutObject
