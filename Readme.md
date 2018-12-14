@@ -1,4 +1,4 @@
-### Flink sample 
+### Apache Flink sample 
 
 This maven project implements a simple Flink based app for processing a simulated cars dataset.
 

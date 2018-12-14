@@ -94,7 +94,7 @@ public class CloudwatchMetricSink<T> extends RichSinkFunction<T> implements Chec
                     .withDimensions(dimension);
 
             PutMetricDataRequest request = new PutMetricDataRequest()
-                    .withNamespace("KDA/MyFlink")
+                    .withNamespace("MyKinesisAnalytics/CarAvgSpeed")
                     .withMetricData(datum);
             PutMetricDataResult response = cw.putMetricData(request);
         });
