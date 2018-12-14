@@ -39,7 +39,17 @@ Each message sent to stream should use following JSON format:
 
 
 ````
-{"dataTimestamp":"2018-12-07 22:56:36.589","vehicleId": "69b6d839-2273-407f-bdae-03f535596223","latitude":47.67,"longitude":-122.24,"speed":172.69,"fuelEfficiency":67.21,"destinationLatitude":47.62,"destinationLongitude":-122.11,"hasMoonRoof":true,"engineTemperature":415}
+{  "dataTimestamp":"2018-12-07 22:56:36.589",
+   "vehicleId": "69b6d839-2273-407f-bdae-03f535596223",
+   "latitude":47.67,"longitude":-122.24,
+    "speed":172.69,
+    "fuelEfficiency":67.21,
+    "destinationLatitude":47.62,
+    "destinationLongitude":-122.11,
+    "hasMoonRoof":true,
+    "engineTemperature":415
+
+}
 ````
 
 You can use following python script to generate sample event:
