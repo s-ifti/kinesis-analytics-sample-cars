@@ -103,11 +103,12 @@ public class StreamingJob {
         if (appProperties != null) {
             streamName = appProperties.getProperty("inputStreamName");
         }
-        
+
         if(StringUtils.isBlank(streamName)) {
             LOG.error("inputStreamName should be pass using CarProperties config within create-application API call");
             throw new Exception("inputStreamName should be pass using CarProperties config within create-application API call, aborting ..." );
         }
+
 
         // use a specific input stream name
         String region = "us-east-1";
@@ -115,6 +116,8 @@ public class StreamingJob {
             region = appProperties.getProperty("region");
             region = StringUtils.isBlank(region)? "us-east-1" : region;
         }
+
+        LOG.info("Starting Kinesis Analytics Cars Sample using stream " + inputStream + " region " + region + " metricTag " + metricTag);
 
         final ParameterTool params = ParameterTool.fromArgs(args);
 
