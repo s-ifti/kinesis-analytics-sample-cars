@@ -19,7 +19,8 @@ To deploy this demo app using CF template, follow these steps:
 2. launch Cloudformation within AWS and then access "Create Stack" button
 3. Upload the CF file using "Upload to S3" option and upload the CF template file (flink-1.6.2.-build-sample.yml)
 4. Choose a stack name (e.g. car-samples)
-5. Once CloudFormation template is completed, goto Kinesis page on AWS console, then select "Kinesis Data Analytics" tab from left pane.
+5. Once CloudFormation template is completed, launch Code Pipeline and review build history to ensure that code build process has finished.
+6. Once all code build steps are completed (takes about 2-3 minutes), goto Kinesis page on AWS console, then select "Kinesis Data Analytics" tab from left pane.
 5. You should be able to find the newly created app (with a prefix of the stack name you chose earlier).
 6. Select the app and see Application Details.
 7. The App should be showing Running status.
