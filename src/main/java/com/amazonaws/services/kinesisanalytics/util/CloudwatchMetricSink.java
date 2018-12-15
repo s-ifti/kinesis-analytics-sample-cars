@@ -73,7 +73,7 @@ public class CloudwatchMetricSink<T> extends RichSinkFunction<T> implements Chec
 
         this.lastBufferFlush = System.currentTimeMillis();
         this.batchSize = 10;
-        this.maxBufferTime = 5000;
+        this.maxBufferTime = 10000;
         this.values = new ArrayList<String>();
 
 

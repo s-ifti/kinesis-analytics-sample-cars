@@ -82,13 +82,11 @@ public class StreamingJob {
 
     private static Logger LOG = LoggerFactory.getLogger(StreamingJob.class);
 
-    private static final String region = "us-east-1";
-
 
     public static void main(String[] args) throws Exception {
         // set up the streaming execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        LOG.info("Starting Kinesis Analytics Cars Sample - Calc Average Speed App");
+        LOG.info("Starting Kinesis Analytics Cars Sample - Calc Average Speed App Version 1.0");
 
         Properties appProperties = getRuntimeConfigProperties();
 
@@ -99,6 +97,19 @@ public class StreamingJob {
         if (appProperties != null) {
             metricTag = appProperties.getProperty("metricTag");
             metricTag = StringUtils.isBlank(metricTag)? "None" : metricTag;
+        }
+        // use a specific input stream name
+        String streamName = "input-stream";
+        if (appProperties != null) {
+            streamName = appProperties.getProperty("inputStreamName");
+            streamName = StringUtils.isBlank(streamName)? "input-stream" : streamName;
+        }
+
+        // use a specific input stream name
+        String region = "us-east-1";
+        if (appProperties != null) {
+            region = appProperties.getProperty("region");
+            region = StringUtils.isBlank(region)? "us-east-1" : region;
         }
 
         final ParameterTool params = ParameterTool.fromArgs(args);
@@ -128,17 +139,17 @@ public class StreamingJob {
 
         // Add kinesis as source
         Properties consumerConfig = new Properties();
-        consumerConfig.put(ConsumerConfigConstants.AWS_REGION, "us-east-1");
+        consumerConfig.put(ConsumerConfigConstants.AWS_REGION, region);
         consumerConfig.put(ConsumerConfigConstants.STREAM_INITIAL_POSITION, "LATEST");
 
         DataStream<String> inputStream = env.addSource(new FlinkKinesisConsumer<>(
-                "input-stream", new SimpleStringSchema(), consumerConfig))
+                streamName, new SimpleStringSchema(), consumerConfig))
                 .name("kinesis");
 
 
 
         // an example Car stream processing job graph
-        DataStream<Double> avgProcessing =
+        DataStream<Tuple2<Boolean,Double>> sampleSpeed =
                 //start with inputStream
                 inputStream
                 //process JSON and return a model POJO class
@@ -166,25 +177,22 @@ public class StreamingJob {
                 //assign timestamp for time window processing
                 .assignTimestampsAndWatermarks(new TimeLagWatermarkGenerator())
                 .name("timestamp")
-                //if want to filter to only cars with moonroof, uncomment following
-                /*.filter(new FilterFunction<Car>() {
-                    @Override
-                    public boolean filter(Car t) throws Exception {
-                        Boolean result = (Boolean) t.getMoonRoof();
-                        return result;
-                    }
-                })
-                .name("filter_moonRoof")
-                */
                 //create tuple of moonroof flag and speed
-                //log the input car object
+                //log input car object
                 .map(event -> {
                             LOG.info("Car: " + event.toString());
                             return new Tuple2<>(event.getMoonRoof(), event.getSpeed());
                         }
                 ).returns(TypeInformation.of(new TypeHint<Tuple2<Boolean, Double>>() {
                 }))
-                .name("map_Speed")
+                .name("map_Speed");
+        //plot sample speed using cloudwatch metric sink
+        sampleSpeed
+                .map( v -> v.f1 )
+                .addSink(new CloudwatchMetricSink<Double>("MyCars-" + metricTag, "SampleSpeed") )
+                        .name("cloudwatch_SampleSpeed_Sink");
+
+        DataStream<Double> avgProcessing = sampleSpeed
                 .timeWindowAll(org.apache.flink.streaming.api.windowing.time.Time.seconds(30))
                 //calc average speed for last 30 seconds window
                 //Note: right now even though we are grouping by moonroof true/false, the aggregate is
