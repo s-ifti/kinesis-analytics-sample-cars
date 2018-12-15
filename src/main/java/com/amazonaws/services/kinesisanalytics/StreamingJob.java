@@ -86,7 +86,7 @@ public class StreamingJob {
     public static void main(String[] args) throws Exception {
         // set up the streaming execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        LOG.info("Starting Kinesis Analytics Cars Sample - Calc Average Speed App Version 1.0");
+        LOG.info("Starting Kinesis Analytics Cars Sample - Calc Average Speed App Version 1.0.1");
 
         Properties appProperties = getRuntimeConfigProperties();
 
@@ -99,10 +99,14 @@ public class StreamingJob {
             metricTag = StringUtils.isBlank(metricTag)? "None" : metricTag;
         }
         // use a specific input stream name
-        String streamName = "input-stream";
+        String streamName = "";
         if (appProperties != null) {
             streamName = appProperties.getProperty("inputStreamName");
-            streamName = StringUtils.isBlank(streamName)? "input-stream" : streamName;
+        }
+        
+        if(StringUtils.isBlank(streamName)) {
+            LOG.error("inputStreamName should be pass using CarProperties config within create-application API call");
+            throw new Exception("inputStreamName should be pass using CarProperties config within create-application API call, aborting ..." );
         }
 
         // use a specific input stream name

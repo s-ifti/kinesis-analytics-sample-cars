@@ -37,7 +37,7 @@
         {
           "PropertyGroupId": "CarProperties",
           "PropertyMap": {
-            "inputStreamName": "#{STREAM_NAME}",
+            "inputStreamName": "#{INPUT_STREAM}",
             "metricTag": "#{APP_NAME}",
             "region" : "#{TEST_REGION}"
           }
