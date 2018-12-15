@@ -117,7 +117,7 @@ public class StreamingJob {
             region = StringUtils.isBlank(region)? "us-east-1" : region;
         }
 
-        LOG.info("Starting Kinesis Analytics Cars Sample using stream " + inputStreamName + " region " + region + " metricTag " + metricTag);
+        LOG.info("Starting Kinesis Analytics Cars Sample using stream " + streamName + " region " + region + " metricTag " + metricTag);
 
         final ParameterTool params = ParameterTool.fromArgs(args);
 
