@@ -223,7 +223,7 @@ Resources:
               commands:
                 - aws s3 cp --quiet --recursive --exclude '*' --include '*.jar' --exclude 'original-*' kinesis-analytics-sample-*/target s3://${ArtifactBucket}/artifacts/
                 - echo "cd kinesis-analytics-sample-*/deploy-java-app; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} KinesisStreamKAJATest ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar"
-                - cd kinesis-analytics-sample-*/deploy-java-app; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} KinesisStreamKAJATest ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar
+                - cd kinesis-analytics-sample-*/deploy-java-app; mkdir -p ~/.aws/models/kinesisanalyticsv2/2018-05-23/; cp service-2.json ~/.aws/models/kinesisanalyticsv2/2018-05-23 ; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} KinesisStreamKAJATest ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar
                 - cat deploy-app-${AWS::Region}-${AWS::StackName}-java-app.tmp
                 - cd ..
 
