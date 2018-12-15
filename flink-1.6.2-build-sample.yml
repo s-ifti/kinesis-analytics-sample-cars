@@ -348,6 +348,10 @@ Resources:
                 Effect: Allow
                 Action:
                   - kinesisanalytics:*
+              - Resource: !Sub ${SampleStreamProducerPutFunction.Arn}
+                Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
               - Resource: "*"
                 Effect: Allow
                 Action:
