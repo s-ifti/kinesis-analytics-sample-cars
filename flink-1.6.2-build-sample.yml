@@ -135,11 +135,12 @@ Resources:
               streamName = '${KinesisStream}'
               print('input stream: ' + streamName)
 
-              for i in range(0, 60):
+              for i in range(60):
                 evtTime = datetime.utcnow()
                 timeString = evtTime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 vId = "\"" + str(uuid.uuid4()) + "\""
-                message ="{\"dataTimestamp\":\"" + timeString + "\",\"vehicleId\": " + vId + ""","latitude":47.67,"longitude":-122.24,"speed":172.69,"fuelEfficiency":67.21,"destinationLatitude":47.62,"destinationLongitude":-122.11,"hasMoonRoof":false,"engineTemperature":415}"""
+                speed = 50 + random.randint(-20,30)
+                message ="{\"dataTimestamp\":\"" + timeString + "\",\"vehicleId\": " + vId + ""","latitude":47.67,"longitude":-122.24,"speed": """ + str(speed) + ""","fuelEfficiency":67.21,"destinationLatitude":47.62,"destinationLongitude":-122.11,"hasMoonRoof":false,"engineTemperature":415}"""
                 
                 
                 print("sending message: " + message)
@@ -218,13 +219,12 @@ Resources:
             build:
               commands:
                 - cd kinesis-analytics-sample-*/ && mvn clean package -B -Dflink.version=${FlinkVersion}
-                - echo "cd ../deploy-java-app; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} KinesisStreamKAJATest ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar"
+                - echo "cd kinesis-analytics-sample-*/deploy-java-app; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} KinesisStreamKAJATest ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar"
             post_build:
               commands:
                 - aws s3 cp --quiet --recursive --exclude '*' --include '*.jar' --exclude 'original-*' kinesis-analytics-sample-*/target s3://${ArtifactBucket}/artifacts/
                 - echo "cd kinesis-analytics-sample-*/deploy-java-app; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} KinesisStreamKAJATest ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar"
                 - cd kinesis-analytics-sample-*/deploy-java-app; mkdir -p ~/.aws/models/kinesisanalyticsv2/2018-05-23/; cp service-2.json ~/.aws/models/kinesisanalyticsv2/2018-05-23 ; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} KinesisStreamKAJATest ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar
-                - cat deploy-app-${AWS::Region}-${AWS::StackName}-java-app.tmp
                 - cd ..
 
           artifacts:
@@ -277,6 +277,47 @@ Resources:
                   - cloudformation:*
                   - iam:PassRole
 
+  KinesisAnalyticsExecRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": { "Service": [ "kinesisanalytics.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: arn:aws:logs:*:*:*
+                Effect: Allow
+                Action:
+                - logs:DescribeLogGroups
+                - logs:DescribeLogStreams
+                - logs:PutLogEvents
+              - Resource: !Sub ${KinesisStream.Arn}
+                Effect: Allow
+                Action:
+                  - kinesis:DescribeStream
+                  - kinesis:ListShards
+                  - kinesis:GetShardIterator
+                  - kinesis:GetRecords
+                  - kinesis:PutRecord
+                  - kinesis:PutRecords
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - kinesisanalytics:*
+                  - cloudwatch:PutMetricData
+                  - s3:Get*
+                  - s3:List*
+                  - s3:HeadBucket
 
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
@@ -295,6 +336,15 @@ Resources:
           PolicyDocument:
             Version: 2012-10-17
             Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - iam:GetRole
+                  - iam:PassRole
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - kinesisanalytics:*
               - Resource: "*"
                 Effect: Allow
                 Action:
