@@ -123,6 +123,7 @@ Resources:
         ZipFile: !Sub |
           import json
           import decimal
+          import random
           from datetime import datetime
           import time
           import uuid
