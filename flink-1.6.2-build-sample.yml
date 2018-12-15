@@ -136,7 +136,7 @@ Resources:
               streamName = '${KinesisStream}'
               print('input stream: ' + streamName)
 
-              for i in range(60):
+              for i in range(120):
                 evtTime = datetime.utcnow()
                 timeString = evtTime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 vId = "\"" + str(uuid.uuid4()) + "\""
@@ -160,7 +160,7 @@ Resources:
                   'body': json.dumps('Car events generated!')
               }
       Runtime: python2.7
-      Timeout: 70
+      Timeout: 140
 
   KinesisConnectorBuildProject:
     Type: AWS::CodeBuild::Project
@@ -226,6 +226,8 @@ Resources:
                 - aws s3 cp --quiet --recursive --exclude '*' --include '*.jar' --exclude 'original-*' kinesis-analytics-sample-*/target s3://${ArtifactBucket}/artifacts/
                 - echo "cd kinesis-analytics-sample-*/deploy-java-app; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} ${KinesisAnalyticsExecRole} ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar"
                 - cd kinesis-analytics-sample-*/deploy-java-app; mkdir -p ~/.aws/models/kinesisanalyticsv2/2018-05-23/; cp service-2.json ~/.aws/models/kinesisanalyticsv2/2018-05-23 ; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} ${KinesisAnalyticsExecRole} ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar
+                - sleep 30
+                - aws lambda invoke  --function-name ${SampleStreamProducerPutFunction} --invocation-type Event ./invoke.log
                 - cd ..
 
           artifacts:
