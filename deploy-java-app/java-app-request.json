@@ -1,0 +1,53 @@
+{
+  "ApplicationName": "$APP_NAME",
+  "ApplicationDescription": "foo",
+  "RuntimeEnvironment": "FLINK-1_6",
+  "ServiceExecutionRole": "#{AWS_ACCOUNT_ROLE_FOR_JAVA_APP}",
+  "ApplicationConfiguration": {
+    "ApplicationCodeConfiguration": {
+      "CodeContent": {
+        "S3ContentLocation": {
+          "BucketARN": "#{BUILT_JAR_S3_BUCKET_ARN}",
+          "FileKey": "artifacts/#{APP_JAR_FILE_NAME}"
+        }
+      },
+      "CodeContentType": "ZIPFILE"
+    },
+    "FlinkApplicationConfiguration": {
+      "CheckpointConfiguration": {
+        "CheckpointInterval": 10000,
+        "CheckpointingEnabled": true,
+        "ConfigurationType": "CUSTOM",
+        "MinPauseBetweenCheckpoints": 5000
+      },
+      "MonitoringConfiguration": {
+        "ConfigurationType": "CUSTOM",
+        "LogLevel": "INFO",
+        "MetricsLevel": "PARALLELISM"
+      },
+      "ParallelismConfiguration": {
+        "AutoScalingEnabled": true,
+        "ConfigurationType": "CUSTOM",
+        "Parallelism": 4,
+        "ParallelismPerKPU": 2
+      }
+    },
+    "EnvironmentProperties": {
+      "PropertyGroups": [
+        {
+          "PropertyGroupId": "CarProperties",
+          "PropertyMap": {
+            "inputStreamName": "#{STREAM_NAME}",
+            "metricTag": "#{APP_NAME}",
+            "region" : "#{TEST_REGION}"
+          }
+        }
+      ]
+    }
+  },
+  "CloudWatchLoggingOptions": [
+    {
+      "LogStreamARN": "arn:aws:logs:#{TEST_REGION}:#{ACCOUNT_ID}:log-group:java-app-log-group-#{TEST_REGION}:log-stream:#{APP_NAME}-sample-#{TEST_REGION}-log"
+    }
+  ]
+}
