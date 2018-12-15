@@ -66,7 +66,6 @@ public class CloudwatchMetricSink<T> extends RichSinkFunction<T> implements Chec
 
 
     public CloudwatchMetricSink(String flinkEventCategory, String metricName) {
-        LOG.warn("IN >>>> CloudwatchMetricSink constructor ");
 
         this.flinkEventCategory = flinkEventCategory;
         this.metricName = metricName;
@@ -81,7 +80,6 @@ public class CloudwatchMetricSink<T> extends RichSinkFunction<T> implements Chec
 
     private void flushValuesBuffer()  {
         //send all data to cloudwatch
-        LOG.warn("CloudWatch flushValuesBuffer");
         Dimension dimension = new Dimension()
                 .withName("Events")
                 .withValue(flinkEventCategory);
@@ -105,8 +103,6 @@ public class CloudwatchMetricSink<T> extends RichSinkFunction<T> implements Chec
     @Override
     public void invoke(T document)  {
 
-        LOG.warn("CW Sink invoke");
-
         values.add(document.toString());
 
         if (values.size() >= batchSize || System.currentTimeMillis() - lastBufferFlush >= maxBufferTime) {
@@ -127,7 +123,7 @@ public class CloudwatchMetricSink<T> extends RichSinkFunction<T> implements Chec
         // following class was not found due to POM shading when running in kubernetes (i.e. not in EMR)
         // changing to use AWSCredentialsProviderChain
         //final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
-        LOG.warn("IN OPEN CLOUDWATCH " + this.metricName);
+        LOG.warn("IN OPEN CLOUDWATCH METRIC SINK " + this.metricName);
 
         this.lastBufferFlush = System.currentTimeMillis();
         this.batchSize = 10;
