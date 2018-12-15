@@ -1,9 +1,42 @@
 ### Apache Flink sample 
 
-This maven project implements a simple Flink based app for processing a simulated cars dataset.
+This maven project implements a simple Flink based app for processing a simulated cars stream.
+
+### Build, deploy, and run Apache Flink app using cloudformation template (in 2-3 minutes)
+
+For a quick build and deploy you can deploy a cloud formation template (flink-1.6.2-build-sample.yml) present in this repository. This cloudformation template automates following steps in creating a Kinesis Analytics Java App:
+
+* Creates a kinesis stream that will receive Car events simulated by a Lambda function
+* Creates a lambda function using python to simulate Car events
+* Build Jar artifact using the maven project in this repository
+* Uploads Jar to S3 bucket to be used by AWS Kinesis analytics
+* Creates an AWS Kinesis Analytics Service using the newly created Jar
+* Invokes the lambda function once to simulate events
+
+To deploy this demo app using CF template, follow these steps:
+
+1. clone this repository on your machine 
+2. launch Cloudformation within AWS and then access "Create Stack" button
+3. Upload the CF file using "Upload to S3" option and upload the CF template file (flink-1.6.2.-build-sample.yml)
+4. Choose a stack name (e.g. car-samples)
+5. Once CloudFormation template is completed, goto Kinesis page on AWS console, then select "Kinesis Data Analytics" tab from left pane.
+5. You should be able to find the newly created app (with a prefix of the stack name you chose earlier).
+6. Select the app and see Application Details.
+7. The App should be showing Running status.
+8. Now you can review AWS Cloudwatch metric emitted by this app within Cloudwatch metrics page.
+9. On Cloudwatch metrics page, search for metrics with your stack name, you should find metrics within MyKinesisAnalytics/CarAvgSpeed, you can select them to plot the avg Speed calculated by the app, as well as the Sample Speed of raw stream events.
+10. You will also be able to review AWS Cloudwatch Log created in log group:
+java-app-log-group-{region}
+and log stream:
+{stack-name}-java-app-sample-{region}-log
+
+After initial test, you can head over to the Lambda service in AWS console and find the event producer lambda with a prefix of the {stack name}-SampleStreamProducerPutFunction...
+You can add a trigger of Cloudwath Event Schedule trigger and choose rate(1 minute) to run the producer continuously.
+
+NOTE: The Lambda and the newly created Kinesis Analytics app will incurr AWS charges, so be sure to delete these resources. Right now the Delete Stack is not fully automated for this CF template so remove stream, lambda functions and AWS Kinesis app manually.
 
 
-### Build (Locally)
+### Dive deep - Build (Locally)
 
 The package depends on flink kinesis connector that is not available in Maven repository, you can build it
 locally by downloading flink 1.6.2 source.
@@ -21,15 +54,6 @@ mvn package
 
 ````
 ./target folder will contain the shaded kinesis-analytics-sample-cars-1.0.jar ready for deployment to AWS Kinesis Analytics as a Java App.
-
-### Build (Using AWS Code Pipeline)
-
-As an alternate to building locally, you can use provided Cloud Formation template (flink-1.6.2-build-sample.yml) to build sample project jar files in the cloud (this will also generate  flink kinesis connector jar for any future projects use).
-
-Once Code Build is completed, simply check the output artifacts of the cloud formation stack and copy the built jar files from the S3 bucket to locally or to another S3 folder for deployment as kinesis analytics service.
-
-You can also skip copyin the jar file and use the generated jar file (uploaded to the S3 bucket by Code pipeline) to be executed as Kinesis Analytics Java (Flink) app.
-
 
 
 ### Simulating source stream
@@ -245,6 +269,3 @@ use following configuration when creating Kinesis Analytics app
 
 
 
-### TODO
-
-Automate Kinesis Analytics App Deployment and Input Stream creation via Cloud formation template.
