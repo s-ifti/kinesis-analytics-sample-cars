@@ -10,12 +10,10 @@ aws logs create-log-group --log-group-name java-app-log-group-$TEST_REGION --reg
 APP_NAME=$2
 ACCOUNT_ID=$3
 AWS_ACCOUNT_ROLE_FOR_JAVA_APP=arn:aws:iam::$3:role/$4
-BUILT_JAR_S3_BUCKET_ARN=$5
-APP_JAR_FILE_NAME=$6
-INPUT_STREAM=$7
+INPUT_STREAM=$5
+BUILT_JAR_S3_BUCKET_ARN=$6
+APP_JAR_FILE_NAME=$7
 
-
-aws kinesis create-stream --stream-name $INPUT_STREAM --shard-count 12 --region $1
 aws logs create-log-stream --log-group-name java-app-log-group-$TEST_REGION --log-stream-name $APP_NAME-sample-$TEST_REGION-log --region $TEST_REGION 
 sed -e "s/\${i}/1/" -e "s/\#{TEST_REGION}/$TEST_REGION/g;s/\#{ACCOUNT_ID}/$ACCOUNT_ID/g;s/\#{BUILT_JAR_S3_BUCKET_ARN}/$BUILT_JAR_S3_BUCKET_ARN/g;s/\#{APP_JAR_FILE_NAME}/$APP_JAR_FILE_NAME/g;s/\#{AWS_ACCOUNT_ROLE_FOR_JAVA_APP}/arn:aws:iam::$3:role\/$4/g;s/\#{APP_NAME}/$APP_NAME/g;s/\#{INPUT_STREAM}/$INPUT_STREAM/g" ./java-app-request.json > deploy-app-$TEST_REGION-$APP_NAME.tmp 
 
