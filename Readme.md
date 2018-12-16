@@ -2,7 +2,7 @@
 
 This maven project implements a simple Flink based app for processing a simulated cars stream.
 
-### Build, deploy, and run Apache Flink app using cloudformation template (in 2-3 minutes)
+### Build, deploy, and run Apache Flink app using cloudformation template (in 4-5 minutes)
 
 For a quick build and deploy you can deploy a cloud formation template (flink-1.6.2-build-sample.yml) present in this repository. This cloudformation template automates following steps in creating a Kinesis Analytics Java App:
 
@@ -14,6 +14,7 @@ For a quick build and deploy you can deploy a cloud formation template (flink-1.
 * Invokes the lambda function once to simulate events
 
 To deploy this demo app using CF template, follow these steps:
+You can also review a small [gist](https://gist.github.com/s-ifti/ffe8496675ecf358d79d21495a544414) with animated gif to get an overview.
 
 1. clone this repository on your machine 
 2. launch Cloudformation within AWS and then access "Create Stack" button
