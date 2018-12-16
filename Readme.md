@@ -1,4 +1,4 @@
-### Apache Flink sample 
+### Apache Flink sample on [AWS Kinesis Analytics](https://aws.amazon.com/blogs/aws/new-amazon-kinesis-data-analytics-for-java/)
 
 This maven project implements a simple Flink based app for processing a simulated cars stream.
 
