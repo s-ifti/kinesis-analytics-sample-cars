@@ -38,6 +38,11 @@ You can add a trigger of Cloudwath Event Schedule trigger and choose rate(1 minu
 
 NOTE: The Lambda and the newly created Kinesis Analytics app will incurr AWS charges, so be sure to delete these resources. Right now the Delete Stack is not fully automated for this CF template so remove stream, lambda functions and AWS Kinesis app manually.
 
+#### Removing demo resources and CF Stack
+
+Once you are done with this demo, prior to deleting stack, you will need to remove S3 bucket created for uploading compiled Jar file and source artifacts manually, look for Resources created by the CF stack to remove S3 bucket.
+After deleting stack, right now you will have to delete Kinesis Analytics App manually as well by launching Kinesis service in AWS console and stopping and deleting newly created app (with prefix of {stack name} chosen when you created the CF stack.
+
 
 ### Dive deep - Build (Locally)
 
