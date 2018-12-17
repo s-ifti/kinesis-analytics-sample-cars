@@ -17,8 +17,8 @@ For a quick build and deploy you can deploy a cloud formation template (flink-1.
 To deploy this demo app using CF template, follow these steps:
 You can also review a small [gist](https://gist.github.com/s-ifti/ffe8496675ecf358d79d21495a544414) with animated gif to get an overview.
 
-1. clone this repository on your machine 
-2. launch Cloudformation within AWS and then access "Create Stack" button
+1. Clone this repository on your machine 
+2. Launch Cloudformation within AWS and then access "Create Stack" button
 3. Upload the CF file using "Upload to S3" option and upload the CF template file (flink-1.6.2.-build-sample.yml)
 4. Choose a stack name (e.g. car-samples)
 5. Once CloudFormation template is completed, launch Code Pipeline and review build history to ensure that code build process has finished.
@@ -36,12 +36,13 @@ and log stream:
 After initial test, you can head over to the Lambda service in AWS console and find the event producer lambda with a prefix of the {stack name}-SampleStreamProducerPutFunction...
 You can add a trigger of Cloudwath Event Schedule trigger and choose rate(1 minute) to run the producer continuously.
 
-NOTE: The Lambda and the newly created Kinesis Analytics app will incurr AWS charges, so be sure to delete these resources. Right now the Delete Stack is not fully automated for this CF template so remove stream, lambda functions and AWS Kinesis app manually.
+NOTE: The Lambda and the newly created Kinesis Analytics app will incurr AWS charges, so be sure to delete these resources once you have played with this demo app. 
 
 #### Removing demo resources and CF Stack
 
-Once you are done with this demo, prior to deleting stack, you will need to remove S3 bucket created for uploading compiled Jar file and source artifacts manually, look for Resources created by the CF stack to remove S3 bucket.
-After deleting stack, right now you will have to delete Kinesis Analytics App manually as well by launching Kinesis service in AWS console and stopping and deleting newly created app (with prefix of {stack name} chosen when you created the CF stack.
+Once you are done with this demo, prior to deleting stack to remove associated resource, you will need to remove S3 bucket created for uploading compiled Jar file and source artifacts manually, look for Resources created by the CF stack to find S3 bucket name.
+
+After deleting stack, you will also have to delete Kinesis Analytics App manually by launching Kinesis service in AWS console and stopping and deleting the newly created app (with prefix of {stack name} chosen when you created the CF stack).
 
 
 ### Dive deep - Build (Locally)
