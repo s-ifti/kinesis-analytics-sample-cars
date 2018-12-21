@@ -8,7 +8,15 @@ Parameters:
     Type: String
     Default: 1.6.2
     AllowedPattern: \d\.\d\.\d
-
+  SourceRepo:
+    Description: Source Code repository name
+    Type: String
+    Default: test-flink
+  Parallelism:
+    Description: Parallelism to use within flink job (Max is 8)
+    Type: String
+    Default: 2
+    AllowedPattern: 2|3|4|5|6|7|8
 Outputs:
   ArtifactBucket:
     Description: Bucket containing the compiled artifacts
@@ -50,7 +58,7 @@ Resources:
               Configuration:
                 S3Bucket: !Ref ArtifactBucket
                 S3ObjectKey: sources/kinesis-analytics-sample-cars.zip
-              RunOrder: 1
+              RunOrder: 2
         - Name: Build
           Actions:
             - Name: BuildKinesisConnector
@@ -106,7 +114,7 @@ Resources:
             flink = urllib2.urlopen('https://github.com/apache/flink/archive/release-${FlinkVersion}.zip')
             s3.put_object(Bucket='${ArtifactBucket}',Key='sources/flink-src.zip',Body=flink.read())
 
-            runtime_artifacts = urllib2.urlopen('https://github.com/s-ifti/kinesis-analytics-sample-cars/archive/master.zip')
+            runtime_artifacts = urllib2.urlopen('https://github.com/s-ifti/test-flink/archive/master.zip')
             s3.put_object(Bucket='${ArtifactBucket}',Key='sources/kinesis-analytics-sample-cars.zip',Body=runtime_artifacts.read())
 
             cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
@@ -136,7 +144,7 @@ Resources:
               streamName = '${KinesisStream}'
               print('input stream: ' + streamName)
 
-              for i in range(120):
+              for i in range(15000):
                 evtTime = datetime.utcnow()
                 timeString = evtTime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 vId = "\"" + str(uuid.uuid4()) + "\""
@@ -150,7 +158,8 @@ Resources:
                     Data=message,
                     PartitionKey='nokey'
                 )
-                time.sleep(1)
+                if i % 100 == 0:
+                  time.sleep(1)
 
               print("sent to " + str( response ) )
               print('DONE')
@@ -160,7 +169,7 @@ Resources:
                   'body': json.dumps('Car events generated!')
               }
       Runtime: python2.7
-      Timeout: 140
+      Timeout: 540
 
   KinesisConnectorBuildProject:
     Type: AWS::CodeBuild::Project
@@ -219,20 +228,19 @@ Resources:
                 - for jar in /tmp/flink-connector-kinesis*.jar; do mvn install:install-file -Dfile=$jar -DgroupId=org.apache.flink -DartifactId=flink-connector-kinesis_2.11 -Dversion=1.6.2 -Dpackaging=jar -DgeneratePom=true; done
             build:
               commands:
-                - cd kinesis-analytics-sample-*/ && mvn clean package -B -Dflink.version=${FlinkVersion}
-                - echo "cd kinesis-analytics-sample-*/deploy-java-app; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} ${KinesisAnalyticsExecRole} ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar"
+                - cd ${SourceRepo}*/ && mvn clean package -B -Dflink.version=${FlinkVersion}
             post_build:
               commands:
-                - aws s3 cp --quiet --recursive --exclude '*' --include '*.jar' --exclude 'original-*' kinesis-analytics-sample-*/target s3://${ArtifactBucket}/artifacts/
-                - echo "cd kinesis-analytics-sample-*/deploy-java-app; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} ${KinesisAnalyticsExecRole} ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar"
-                - cd kinesis-analytics-sample-*/deploy-java-app; mkdir -p ~/.aws/models/kinesisanalyticsv2/2018-05-23/; cp service-2.json ~/.aws/models/kinesisanalyticsv2/2018-05-23 ; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} ${KinesisAnalyticsExecRole} ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar
+                - aws s3 cp --quiet --recursive --exclude '*' --include '*.jar' --exclude 'original-*' ${SourceRepo}*/target s3://${ArtifactBucket}/artifacts/
+                - echo "cd ${SourceRepo}*/deploy-java-app; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} ${KinesisAnalyticsExecRole} ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar ${Parallelism}"
+                - cd ${SourceRepo}*/deploy-java-app; mkdir -p ~/.aws/models/kinesisanalyticsv2/2018-05-23/; cp service-2.json ~/.aws/models/kinesisanalyticsv2/2018-05-23 ; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} ${KinesisAnalyticsExecRole} ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar ${Parallelism}
                 - sleep 30
                 - aws lambda invoke  --function-name ${SampleStreamProducerPutFunction} --invocation-type Event ./invoke.log
                 - cd ..
 
           artifacts:
             files:
-              - kinesis-analytics-sample-*/target/*.jar
+              - ${SourceRepo}*/target/*.jar
             discard-paths: yes
       TimeoutInMinutes: 30
 
@@ -373,7 +381,7 @@ Resources:
   KinesisStream:
     Type: AWS::Kinesis::Stream
     Properties:
-      ShardCount: 12
+      ShardCount: !Sub ${Parallelism}
 
   LambdaExecutionRole:
     Type: AWS::IAM::Role

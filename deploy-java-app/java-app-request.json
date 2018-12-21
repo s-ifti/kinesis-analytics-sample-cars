@@ -28,8 +28,8 @@
       "ParallelismConfiguration": {
         "AutoScalingEnabled": true,
         "ConfigurationType": "CUSTOM",
-        "Parallelism": 4,
-        "ParallelismPerKPU": 2
+        "Parallelism": #{PARALLELISM},
+        "ParallelismPerKPU": #{PARALLELISM_PERKPU}
       }
     },
     "EnvironmentProperties": {
@@ -39,7 +39,8 @@
           "PropertyMap": {
             "inputStreamName": "#{INPUT_STREAM}",
             "metricTag": "#{APP_NAME}",
-            "region" : "#{TEST_REGION}"
+            "region" : "#{TEST_REGION}",
+            "parallelism" : "#{PARALLELISM}"
           }
         }
       ]

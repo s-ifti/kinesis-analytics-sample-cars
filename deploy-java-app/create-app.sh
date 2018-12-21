@@ -1,7 +1,7 @@
-if [ $# -lt 7 ]; then
+if [ $# -lt 8 ]; then
   echo 1>&2 "$0: parameters missing"
-  echo 1>&2 "Usage: create-app.sh {region} {app-name} {aws-account-id} {execution-role-arn} {stream-name} {bucket} {jarfile}"
-  echo 1>&2 "        e.g. $ create-app.sh us-east-1 my-app-dec-24 123456789012 KinesisAnalyticsSampleExecRole my-input-stream my-s3-artifact-bucket my-jar-file-name"
+  echo 1>&2 "Usage: create-app.sh {region} {app-name} {aws-account-id} {execution-role-arn} {stream-name} {bucket} {jarfile} {parallelism}"
+  echo 1>&2 "        e.g. $ create-app.sh us-east-1 my-app-dec-24 123456789012 KinesisAnalyticsSampleExecRole my-input-stream my-s3-artifact-bucket my-jar-file-name 4"
   exit 2
 fi
 
@@ -13,9 +13,11 @@ AWS_ACCOUNT_ROLE_FOR_JAVA_APP=arn:aws:iam::$3:role/$4
 INPUT_STREAM=$5
 BUILT_JAR_S3_BUCKET_ARN=$6
 APP_JAR_FILE_NAME=$7
+PARALLELISM=$8
+PARALLELISM_PERKPU=$((PARALLELISM / 2))
 
 aws logs create-log-stream --log-group-name java-app-log-group-$TEST_REGION --log-stream-name $APP_NAME-sample-$TEST_REGION-log --region $TEST_REGION 
-sed -e "s/\${i}/1/" -e "s/\#{TEST_REGION}/$TEST_REGION/g;s/\#{ACCOUNT_ID}/$ACCOUNT_ID/g;s/\#{BUILT_JAR_S3_BUCKET_ARN}/$BUILT_JAR_S3_BUCKET_ARN/g;s/\#{APP_JAR_FILE_NAME}/$APP_JAR_FILE_NAME/g;s/\#{AWS_ACCOUNT_ROLE_FOR_JAVA_APP}/arn:aws:iam::$3:role\/$4/g;s/\#{APP_NAME}/$APP_NAME/g;s/\#{INPUT_STREAM}/$INPUT_STREAM/g" ./java-app-request.json > deploy-app-$TEST_REGION-$APP_NAME.tmp 
+sed -e "s/\${i}/1/" -e "s/\#{TEST_REGION}/$TEST_REGION/g;s/\#{PARALLELISM}/$PARALLELISM/g;s/\#{PARALLELISM_PERKPU}/$PARALLELISM_PERKPU/g;s/\#{ACCOUNT_ID}/$ACCOUNT_ID/g;s/\#{BUILT_JAR_S3_BUCKET_ARN}/$BUILT_JAR_S3_BUCKET_ARN/g;s/\#{APP_JAR_FILE_NAME}/$APP_JAR_FILE_NAME/g;s/\#{AWS_ACCOUNT_ROLE_FOR_JAVA_APP}/arn:aws:iam::$3:role\/$4/g;s/\#{APP_NAME}/$APP_NAME/g;s/\#{INPUT_STREAM}/$INPUT_STREAM/g" ./java-app-request.json > deploy-app-$TEST_REGION-$APP_NAME.tmp
 
 aws kinesisanalyticsv2 create-application --application-name $APP_NAME  --runtime-environment FLINK-1_6 \
 --service-execution-role $AWS_ACCOUNT_ROLE_FOR_JAVA_APP \
