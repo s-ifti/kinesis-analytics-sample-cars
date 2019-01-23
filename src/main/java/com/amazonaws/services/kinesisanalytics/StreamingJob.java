@@ -189,7 +189,8 @@ public class StreamingJob {
                 .name("map_Speed");
 
         DataStream<Stats> avgProcessing = sampleSpeed
-                .timeWindowAll(org.apache.flink.streaming.api.windowing.time.Time.seconds(30))
+                .keyBy("vehicleId")
+                .timeWindow(org.apache.flink.streaming.api.windowing.time.Time.seconds(30))
                 //calc statsfor last 30 seconds window
                 .aggregate(new StatsAggregate(), new MyProcessWindowFunction())
                 .name("avg_30Sec_Speed")

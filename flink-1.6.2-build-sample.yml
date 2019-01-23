@@ -140,12 +140,16 @@ Resources:
               
                   
               client = boto3.client('kinesis')
+              clientCW = boto3.client('cloudwatch')
               
               streamName = '${KinesisStream}'
               print('input stream: ' + streamName)
 
-              for i in range(15000):
+              for i in range(3000):
                 evtTime = datetime.utcnow()
+                if( abs((evtTime - startTime).seconds) > 58):
+                    print("TIME UP")
+                    break
                 timeString = evtTime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 vId = "\"" + str(uuid.uuid4()) + "\""
                 speed = 50 + random.randint(-20,30)
@@ -158,10 +162,13 @@ Resources:
                     Data=message,
                     PartitionKey='nokey'
                 )
-                if i % 100 == 0:
+                if i % 50 == 0:
                   time.sleep(1)
 
-              print("sent to " + str( response ) )
+              clientCW.put_metric_data(Namespace="MyKinesisAnalytics/CarAvgSpeed", MetricData=[{'MetricName': 'PutRecrodCount', 
+                  'Dimensions': [ {'Name': 'Events', 'Value': '${AWS::Region}-${AWS::StackName}-java-app'}], 'Timestamp' : datetime.utcnow(), 'Value': i , 'Unit': 'None' }])
+
+              print("Total messages sent " + str(i) )
               print('DONE')
 
               return {
@@ -445,3 +452,7 @@ Resources:
               - kinesis:GetRecords
               - kinesis:PutRecord
               - kinesis:PutRecords
+          - Resource: "*"
+            Effect: Allow
+            Action:
+              - cloudwatch:PutMetricData
