@@ -11,7 +11,7 @@ Parameters:
   SourceRepo:
     Description: Source Code repository name
     Type: String
-    Default: kinesis-analytics-sample
+    Default: kinesis-analytics-sample-cars
   Parallelism:
     Description: Parallelism to use within flink job (Max is 8)
     Type: String
