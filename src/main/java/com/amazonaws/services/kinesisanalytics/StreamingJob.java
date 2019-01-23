@@ -16,7 +16,6 @@ import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
@@ -83,7 +82,7 @@ public class StreamingJob {
 
     private static Logger LOG = LoggerFactory.getLogger(StreamingJob.class);
 
-    private static String VERSION = "1.0.4";
+    private static String VERSION = "1.0.2";
     private static String DEFAULT_REGION = "us-east-1";
     private static int DEFAULT_PARALLELISM = 4;
 
@@ -150,9 +149,8 @@ public class StreamingJob {
 
 
 
-
         // an example Car stream processing job graph
-        DataStream<Tuple3<String,Boolean,Double>> sampleSpeed =
+        DataStream<Tuple2<Boolean,Double>> sampleSpeed =
                 //start with inputStream
                 inputStream
                 //process JSON and return a model POJO class
@@ -176,10 +174,7 @@ public class StreamingJob {
 
                 }).
                 returns(Car.class)
-                .name("map_Car2")
-                .map ( c -> { return c;} )
-                .returns(Car.class)
-                .name("map_Car3")
+                .name("map_Car")
                 //assign timestamp for time window processing
                 .assignTimestampsAndWatermarks(new TimeLagWatermarkGenerator())
                 .name("timestamp")
@@ -187,14 +182,14 @@ public class StreamingJob {
                 //log input car object
                 .map(event -> {
                             LOG.info("Car: " + event.toString());
-                            return new Tuple3<>(event.getVehicleId(), event.getMoonRoof(), event.getSpeed());
+                            return new Tuple2<>(event.getMoonRoof(), event.getSpeed());
                         }
-                ).returns(TypeInformation.of(new TypeHint<Tuple3<String, Boolean, Double>>() {
+                ).returns(TypeInformation.of(new TypeHint<Tuple2<Boolean, Double>>() {
                 }))
                 .name("map_Speed");
 
         DataStream<Stats> avgProcessing = sampleSpeed
-                .keyBy("f0")
+                .keyBy("vehicleId")
                 .timeWindow(org.apache.flink.streaming.api.windowing.time.Time.seconds(30))
                 //calc statsfor last 30 seconds window
                 .aggregate(new StatsAggregate(), new MyProcessWindowFunction())
@@ -260,19 +255,19 @@ public class StreamingJob {
      * The Stats accumulator is used to keep a running sum and a count.
      */
     private static class StatsAggregate
-            implements AggregateFunction<Tuple3<String, Boolean, Double>, Stats, Stats> {
+            implements AggregateFunction<Tuple2<Boolean, Double>, Stats, Stats> {
         @Override
         public Stats createAccumulator() {
             return new Stats(0.0, 0.0, 0.0, 0.0);
         }
 
         @Override
-        public Stats add(Tuple3<String,Boolean, Double> value, Stats accumulator) {
+        public Stats add(Tuple2<Boolean, Double> value, Stats accumulator) {
             return new Stats(
-                    Math.min(accumulator.getMin(), value.f2) ,
-                    Math.max(accumulator.getMax(), value.f2),
+                    Math.min(accumulator.getMin(), value.f1) ,
+                    Math.max(accumulator.getMax(), value.f1),
                     accumulator.getCount() + 1L,
-                    accumulator.getSum() + value.f2
+                    accumulator.getSum() + value.f1
             );
         }
 
@@ -293,9 +288,9 @@ public class StreamingJob {
     }
 
     private static class MyProcessWindowFunction
-            extends ProcessWindowFunction<Stats, Stats, Tuple, TimeWindow> {
+            extends ProcessAllWindowFunction<Stats, Stats, TimeWindow> {
 
-        public void process( Tuple key,
+        public void process(
                 Context context,
                 Iterable<Stats> averages,
                 Collector<Stats> out) {
@@ -321,4 +316,3 @@ public class StreamingJob {
         }
     }
 }
-
