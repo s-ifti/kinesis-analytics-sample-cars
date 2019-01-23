@@ -144,6 +144,7 @@ Resources:
               
               streamName = '${KinesisStream}'
               print('input stream: ' + streamName)
+              startTime = datetime.utcnow()
 
               for i in range(3000):
                 evtTime = datetime.utcnow()
