@@ -187,7 +187,9 @@ public class StreamingJob {
                 ).returns(TypeInformation.of(new TypeHint<Tuple2<Boolean, Double>>() {
                 }))
                 .name("map_Speed");
-
+        sampleSpeed.print()
+                .name("stdout");
+/* 
         DataStream<Stats> avgProcessing = sampleSpeed
                 .timeWindowAll(org.apache.flink.streaming.api.windowing.time.Time.seconds(30))
                 //calc statsfor last 30 seconds window
@@ -210,7 +212,7 @@ public class StreamingJob {
                 avgProcessing.print()
 
                 .name("stdout");
-
+*/
 
         env.execute();
     }
