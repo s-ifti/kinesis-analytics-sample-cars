@@ -85,6 +85,7 @@ public class StreamingJob {
     private static String VERSION = "1.0.2";
     private static String DEFAULT_REGION = "us-east-1";
     private static int DEFAULT_PARALLELISM = 4;
+    private static int DEFAULT_MESSAGE_EXTRA_PAYLOAD_SIZE = 1024*1024 ; //1MB
 
     private static Properties appProperties = null;
 
@@ -109,6 +110,8 @@ public class StreamingJob {
         int parallelism = getAppPropertyInt( "parallelism", DEFAULT_PARALLELISM);
 
         String metricTag = getAppProperty("metricTag", "None");
+
+        int simulateMemoryAllocation = getAppPropertyInt( "simulateMessageSize", DEFAULT_MESSAGE_EXTRA_PAYLOAD_SIZE);
 
 
         LOG.info("Starting Kinesis Analytics Cars Sample using parallelism {} " +
@@ -165,11 +168,17 @@ public class StreamingJob {
                     } catch (Exception e) {
                         LOG.error("Error processing timestamp " + e.toString());
                     }
+                    int simulateMemoryBufferPerMessage = simulateMemoryAllocation;
+                    try {
+                        simulateMemoryBufferPerMessage = jsonNode.get("simulateMemoryBufferPerMessage").asInt();
+                    } catch (Exception e) {
+                    }
                     return new Car(
                             jsonNode.get("vehicleId").asText(),
                             timestamp,
                             jsonNode.get("hasMoonRoof").asText().equals("true"),
-                            jsonNode.get("speed").asDouble()
+                            jsonNode.get("speed").asDouble(),
+                            simulateMemoryBufferPerMessage
                     );
 
                 }).
@@ -187,9 +196,7 @@ public class StreamingJob {
                 ).returns(TypeInformation.of(new TypeHint<Tuple2<Boolean, Double>>() {
                 }))
                 .name("map_Speed");
-        sampleSpeed.print()
-                .name("stdout");
-/* 
+
         DataStream<Stats> avgProcessing = sampleSpeed
                 .timeWindowAll(org.apache.flink.streaming.api.windowing.time.Time.seconds(30))
                 //calc statsfor last 30 seconds window
@@ -212,7 +219,6 @@ public class StreamingJob {
                 avgProcessing.print()
 
                 .name("stdout");
-*/
 
         env.execute();
     }

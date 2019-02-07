@@ -12,17 +12,25 @@ public class Car
     public Car() {
 
     }
-    public Car(String vehicleId, Timestamp timestamp, Boolean hasMoonRoof, Double speed) {
+    public Car(String vehicleId, Timestamp timestamp, Boolean hasMoonRoof, Double speed, int simulateMemoryAllocationSize) {
         this.vehicleId = vehicleId;
         this.moonRoof = hasMoonRoof;
         this.timestamp = timestamp;
         this.speed = speed;
+        this.simulateMemoryAllocationSize = simulateMemoryAllocationSize;
+        this.buffer = new byte[simulateMemoryAllocationSize];
+        for(int i=0;i <simulateMemoryAllocationSize; i++ ) {
+            this.buffer[i] = (byte)0xde;
+        }
 
     }
     private String vehicleId;
     private Boolean moonRoof;
     private Double speed;
     private Timestamp timestamp;
+    private int simulateMemoryAllocationSize;
+
+    private byte buffer[];
 
     public void setTimestamp(Timestamp timestamp) {
         this.timestamp = timestamp;

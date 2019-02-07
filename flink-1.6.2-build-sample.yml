@@ -12,10 +12,14 @@ Parameters:
     Description: Source Code repository name
     Type: String
     Default: kinesis-analytics-sample-cars
+  SourceBranch:
+    Description: Source Code repository branch
+    Type: String
+    Default: oom
   Parallelism:
     Description: Parallelism to use within flink job (Max is 8)
     Type: String
-    Default: 2
+    Default: 1
     AllowedPattern: 1|2|3|4|5|6|7|8
 Outputs:
   ArtifactBucket:
@@ -114,7 +118,7 @@ Resources:
             flink = urllib2.urlopen('https://github.com/apache/flink/archive/release-${FlinkVersion}.zip')
             s3.put_object(Bucket='${ArtifactBucket}',Key='sources/flink-src.zip',Body=flink.read())
 
-            runtime_artifacts = urllib2.urlopen('https://github.com/s-ifti/${SourceRepo}/archive/master.zip')
+            runtime_artifacts = urllib2.urlopen('https://github.com/s-ifti/${SourceRepo}/archive/${SourceBranch}.zip')
             s3.put_object(Bucket='${ArtifactBucket}',Key='sources/kinesis-analytics-sample-cars.zip',Body=runtime_artifacts.read())
 
             cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
