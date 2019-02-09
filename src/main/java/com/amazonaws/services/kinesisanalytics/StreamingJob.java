@@ -153,7 +153,7 @@ public class StreamingJob {
 
 
         // an example Car stream processing job graph
-        DataStream<Tuple2<Boolean,Double>> sampleSpeed =
+        DataStream<Tuple2<Car,Double>> sampleSpeed =
                 //start with inputStream
                 inputStream
                 //process JSON and return a model POJO class
@@ -191,9 +191,9 @@ public class StreamingJob {
                 //log input car object
                 .map(event -> {
                             LOG.info("Car: " + event.toString());
-                            return new Tuple2<>(event.getMoonRoof(), event.getSpeed());
+                            return new Tuple2<>(event, event.getSpeed());
                         }
-                ).returns(TypeInformation.of(new TypeHint<Tuple2<Boolean, Double>>() {
+                ).returns(TypeInformation.of(new TypeHint<Tuple2<Car, Double>>() {
                 }))
                 .name("map_Speed");
 
@@ -262,14 +262,14 @@ public class StreamingJob {
      * The Stats accumulator is used to keep a running sum and a count.
      */
     private static class StatsAggregate
-            implements AggregateFunction<Tuple2<Boolean, Double>, Stats, Stats> {
+            implements AggregateFunction<Tuple2<Car, Double>, Stats, Stats> {
         @Override
         public Stats createAccumulator() {
             return new Stats(0.0, 0.0, 0.0, 0.0);
         }
 
         @Override
-        public Stats add(Tuple2<Boolean, Double> value, Stats accumulator) {
+        public Stats add(Tuple2<Car, Double> value, Stats accumulator) {
             return new Stats(
                     Math.min(accumulator.getMin(), value.f1) ,
                     Math.max(accumulator.getMax(), value.f1),
