@@ -119,7 +119,7 @@ public class StreamingJob {
                 parallelism, streamName, region, metricTag);
 
         final ParameterTool params = ParameterTool.fromArgs(args);
-
+/*
         // Enable checkpointing
         env.enableCheckpointing(TimeUnit.MINUTES.toMillis(5L));
         StateBackend stateBackend = env.getStateBackend();
@@ -134,7 +134,7 @@ public class StreamingJob {
         env.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
         // enable externalized checkpoints
         env.getCheckpointConfig().enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
-
+*/
 
         env.getConfig().setGlobalJobParameters(params);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
@@ -274,7 +274,8 @@ public class StreamingJob {
                     Math.min(accumulator.getMin(), value.f1) ,
                     Math.max(accumulator.getMax(), value.f1),
                     accumulator.getCount() + 1L,
-                    accumulator.getSum() + value.f1
+                    accumulator.getSum() + value.f1,
+                    accumulator.getBuffers()
             );
         }
 
@@ -289,7 +290,9 @@ public class StreamingJob {
                     Math.min(a.getMin(), b.getMin()) ,
                     Math.max(a.getMax(), b.getMax()),
                     a.getCount() + b.getCount(),
-                    a.getSum() + b.getSum()
+                    a.getSum() + b.getSum(),
+                    a.getBuffers(),
+                    b.getBuffers()
             );
         }
     }

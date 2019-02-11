@@ -1,5 +1,8 @@
 package com.amazonaws.services.kinesisanalytics;
 
+import java.util.List;
+import java.util.ArrayList;
+
 /**
  * Stats POJO class for output
  */
@@ -9,7 +12,7 @@ public class Stats
     public static final long serialVersionUID = 102L;
 
     public Stats() {
-
+        buffers = new ArrayList();
     }
 
     public Stats(Double min, Double max, Double count, Double sum) {
@@ -24,13 +27,49 @@ public class Stats
             // this should be NaN, but starting with 0
             this.setAvg(0.0);
         }
+        this.buffers = new ArrayList();
 
     }
+
+    public Stats(Double min, Double max, Double count, Double sum, List<byte[]> buffers) {
+        this.setMin(min);
+        this.setMax(max);
+        this.setSum(sum);
+        this.setCount(count);
+        if(count>0) {
+            this.setAvg(sum / count);
+        }
+        else {
+            // this should be NaN, but starting with 0
+            this.setAvg(0.0);
+        }
+        this.buffers = buffers;
+
+    }
+
+    public Stats(Double min, Double max, Double count, Double sum, List<byte[]> buffer1, List<byte[]> buffer2) {
+        this.setMin(min);
+        this.setMax(max);
+        this.setSum(sum);
+        this.setCount(count);
+        if(count>0) {
+            this.setAvg(sum / count);
+        }
+        else {
+            // this should be NaN, but starting with 0
+            this.setAvg(0.0);
+        }
+        this.buffers = new ArrayList(buffer1);
+        this.buffers.addAll(buffer2);
+    }
+
     private Double min;
     private Double max;
     private Double avg;
     private Double count;
     private Double sum;
+
+    private List<byte[]> buffers;
 
     public void setMin(Double min) {
         this.min = min;
@@ -66,7 +105,7 @@ public class Stats
 
 
     public String toString() {
-        return "STATS: min: " + min + " max: " + max + " avg: " + avg + " count: " + count;
+        return "STATS: min: " + min + " max: " + max + " avg: " + avg + " count: " + count + " bufers appended len : " + buffers.size();
     }
 
     public Double getSum() {
@@ -75,5 +114,13 @@ public class Stats
 
     public void setSum(Double sum) {
         this.sum = sum;
+    }
+
+    public List<byte[]> getBuffers() {
+        return buffers;
+    }
+
+    public void setBufers(List<byte[]> buffers) {
+        this.buffers = buffers;
     }
 }

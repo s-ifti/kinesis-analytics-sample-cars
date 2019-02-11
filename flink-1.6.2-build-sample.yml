@@ -15,7 +15,7 @@ Parameters:
   SourceBranch:
     Description: Source Code repository branch
     Type: String
-    Default: oom2
+    Default: oom-stats
   Parallelism:
     Description: Parallelism to use within flink job (Max is 8)
     Type: String

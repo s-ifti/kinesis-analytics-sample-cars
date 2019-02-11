@@ -61,7 +61,7 @@ public class Car
     }
 
     public String toString() {
-        return "VEHICLE: " + vehicleId + " TIMESTAMP: " + timestamp + " MOONROOF: " + moonRoof + " Speed: " + speed;
+        return "VEHICLE: " + vehicleId + " TIMESTAMP: " + timestamp + " MOONROOF: " + moonRoof + " Speed: " + speed + " buffer size: " + buffer.length;
     }
 
 
