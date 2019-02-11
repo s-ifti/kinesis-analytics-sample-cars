@@ -82,7 +82,7 @@ public class StreamingJob {
 
     private static Logger LOG = LoggerFactory.getLogger(StreamingJob.class);
 
-    private static String VERSION = "1.0.2";
+    private static String VERSION = "1.0.5";
     private static String DEFAULT_REGION = "us-east-1";
     private static int DEFAULT_PARALLELISM = 4;
     private static int DEFAULT_MESSAGE_EXTRA_PAYLOAD_SIZE = 1024*1024 ; //1MB
@@ -119,7 +119,7 @@ public class StreamingJob {
                 parallelism, streamName, region, metricTag);
 
         final ParameterTool params = ParameterTool.fromArgs(args);
-/*
+/* use default KDA setting
         // Enable checkpointing
         env.enableCheckpointing(TimeUnit.MINUTES.toMillis(5L));
         StateBackend stateBackend = env.getStateBackend();
@@ -275,7 +275,8 @@ public class StreamingJob {
                     Math.max(accumulator.getMax(), value.f1),
                     accumulator.getCount() + 1L,
                     accumulator.getSum() + value.f1,
-                    accumulator.getBuffers()
+                    accumulator.getBuffers(),
+                    value.f0.getBuffer()
             );
         }
 

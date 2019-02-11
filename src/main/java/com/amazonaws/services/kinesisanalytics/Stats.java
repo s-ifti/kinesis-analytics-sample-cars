@@ -47,6 +47,23 @@ public class Stats
 
     }
 
+    public Stats(Double min, Double max, Double count, Double sum, List<byte[]> buffers, byte[] appendBuffer) {
+        this.setMin(min);
+        this.setMax(max);
+        this.setSum(sum);
+        this.setCount(count);
+        if(count>0) {
+            this.setAvg(sum / count);
+        }
+        else {
+            // this should be NaN, but starting with 0
+            this.setAvg(0.0);
+        }
+        this.buffers = new ArrayList(buffers);
+        this.buffers.add(appendBuffer);
+
+    }
+
     public Stats(Double min, Double max, Double count, Double sum, List<byte[]> buffer1, List<byte[]> buffer2) {
         this.setMin(min);
         this.setMax(max);
@@ -105,7 +122,7 @@ public class Stats
 
 
     public String toString() {
-        return "STATS: min: " + min + " max: " + max + " avg: " + avg + " count: " + count + " bufers appended len : " + buffers.size();
+        return "STATS: min: " + min + " max: " + max + " avg: " + avg + " count: " + count + " accumulated bufers len : " + buffers.size();
     }
 
     public Double getSum() {

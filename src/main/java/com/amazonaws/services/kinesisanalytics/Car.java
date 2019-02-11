@@ -64,5 +64,13 @@ public class Car
         return "VEHICLE: " + vehicleId + " TIMESTAMP: " + timestamp + " MOONROOF: " + moonRoof + " Speed: " + speed + " buffer size: " + buffer.length;
     }
 
+    public byte[] getBuffer() {
+        return this.buffer;
+    }
+
+    public void setBuffer(byte [] buffer) {
+        this.buffer = buffer;
+    }
+
 
 }
