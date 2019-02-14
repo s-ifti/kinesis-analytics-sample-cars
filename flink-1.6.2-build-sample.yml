@@ -15,11 +15,11 @@ Parameters:
   SourceBranch:
     Description: Source Code repository branch
     Type: String
-    Default: oom-stats
+    Default: oom-parallelism-stats 
   Parallelism:
     Description: Parallelism to use within flink job (Max is 8)
     Type: String
-    Default: 1
+    Default: 4
     AllowedPattern: 1|2|3|4|5|6|7|8
 Outputs:
   ArtifactBucket:

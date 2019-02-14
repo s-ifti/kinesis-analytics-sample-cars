@@ -11,11 +11,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.flink.api.common.functions.AggregateFunction;
+import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple;
-import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
@@ -153,7 +154,7 @@ public class StreamingJob {
 
 
         // an example Car stream processing job graph
-        DataStream<Tuple2<Car,Double>> sampleSpeed =
+        DataStream<Tuple3<String, Car,Double>> sampleSpeed =
                 //start with inputStream
                 inputStream
                 //process JSON and return a model POJO class
@@ -191,30 +192,37 @@ public class StreamingJob {
                 //log input car object
                 .map(event -> {
                             LOG.info("Car: " + event.toString());
-                            return new Tuple2<>(event, event.getSpeed());
+                            return new Tuple3<>(event.getVehicleId(), event, event.getSpeed());
                         }
-                ).returns(TypeInformation.of(new TypeHint<Tuple2<Car, Double>>() {
+                ).returns(TypeInformation.of(new TypeHint<Tuple3<String, Car, Double>>() {
                 }))
                 .name("map_Speed");
 
         DataStream<Stats> avgProcessing = sampleSpeed
-                .timeWindowAll(org.apache.flink.streaming.api.windowing.time.Time.seconds(30))
+                .keyBy("f0")
+                .timeWindow(org.apache.flink.streaming.api.windowing.time.Time.seconds(30))
                 //calc statsfor last 30 seconds window
                 .aggregate(new StatsAggregate(), new MyProcessWindowFunction())
+
                 .name("avg_30Sec_Speed")
                 .map(stats -> {
                     LOG.info("avg Speed: " + stats.getAvg());
                     return stats;
-                })
-                .name("map_logSpeed");
+                }).name("map_logSpeed");
 
+                //note: Following does not represent avg and count seen in the input for last 30 seconds
+                //rather it generates each parallel partitition (keyBy) output avg and count
+                //we need a way to further sum / avg these, this needs further exploration on flink operators
+        
                 avgProcessing
                         .map(stats -> stats.getAvg())
-                        .addSink(new CloudwatchMetricSink<Double>("MyCars-" + metricTag, "AvgSpeed") )
+
+                        .addSink(new CloudwatchMetricSink<Double>("MyCars-ParallelSum-" + metricTag, "AvgSpeed") )
                         .name("cloudwatch_AvgSpeed_Sink");
                 avgProcessing
                         .map(stats -> stats.getCount())
-                        .addSink(new CloudwatchMetricSink<Double>("MyCars-" + metricTag, "SampleCount") )
+                        //sum(0)
+                        .addSink(new CloudwatchMetricSink<Double>("MyCars-ParallelSum-" + metricTag, "SampleCount") )
                         .name("cloudwatch_SampleCounts_Sink");
                 avgProcessing.print()
 
@@ -262,21 +270,21 @@ public class StreamingJob {
      * The Stats accumulator is used to keep a running sum and a count.
      */
     private static class StatsAggregate
-            implements AggregateFunction<Tuple2<Car, Double>, Stats, Stats> {
+            implements AggregateFunction<Tuple3<String, Car, Double>, Stats, Stats> {
         @Override
         public Stats createAccumulator() {
             return new Stats(0.0, 0.0, 0.0, 0.0);
         }
 
         @Override
-        public Stats add(Tuple2<Car, Double> value, Stats accumulator) {
+        public Stats add(Tuple3<String, Car, Double> value, Stats accumulator) {
             return new Stats(
-                    Math.min(accumulator.getMin(), value.f1) ,
-                    Math.max(accumulator.getMax(), value.f1),
+                    Math.min(accumulator.getMin(), value.f2) ,
+                    Math.max(accumulator.getMax(), value.f2),
                     accumulator.getCount() + 1L,
-                    accumulator.getSum() + value.f1,
+                    accumulator.getSum() + value.f2,
                     accumulator.getBuffers(),
-                    value.f0.getBuffer()
+                    value.f1.getBuffer()
             );
         }
 
@@ -299,16 +307,17 @@ public class StreamingJob {
     }
 
     private static class MyProcessWindowFunction
-            extends ProcessAllWindowFunction<Stats, Stats, TimeWindow> {
+                extends ProcessWindowFunction<Stats, Stats, Tuple, TimeWindow> {
 
-        public void process(
-                Context context,
-                Iterable<Stats> averages,
-                Collector<Stats> out) {
-            Stats average = averages.iterator().next();
-            out.collect(average);
-        }
+            public void process( Tuple key,
+                    Context context,
+                    Iterable<Stats> averages,
+                    Collector<Stats> out) {
+                Stats average = averages.iterator().next();
+                out.collect(average);
+            }
     }
+    
 
     // for generating timestamp and watermark, required for using any time Window processing
     public static class TimeLagWatermarkGenerator implements AssignerWithPeriodicWatermarks<Car> {
