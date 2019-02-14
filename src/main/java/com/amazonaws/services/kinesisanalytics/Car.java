@@ -12,8 +12,9 @@ public class Car
     public Car() {
 
     }
-    public Car(String vehicleId, Timestamp timestamp, Boolean hasMoonRoof, Double speed, int simulateMemoryAllocationSize) {
+    public Car(String vehicleId, String model, Timestamp timestamp, Boolean hasMoonRoof, Double speed, int simulateMemoryAllocationSize) {
         this.vehicleId = vehicleId;
+        this.model = model;
         this.moonRoof = hasMoonRoof;
         this.timestamp = timestamp;
         this.speed = speed;
@@ -25,6 +26,7 @@ public class Car
 
     }
     private String vehicleId;
+    private String model;
     private Boolean moonRoof;
     private Double speed;
     private Timestamp timestamp;
@@ -55,6 +57,8 @@ public class Car
     public Boolean getMoonRoof() {
         return moonRoof;
     }
+    public String getModel() { return model; }
+    public void setModel(String model) { this.model = model;}
 
     public Double getSpeed() {
         return speed;

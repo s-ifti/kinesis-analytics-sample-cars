@@ -174,8 +174,15 @@ public class StreamingJob {
                         simulateMemoryBufferPerMessage = jsonNode.get("simulateMemoryBufferPerMessage").asInt();
                     } catch (Exception e) {
                     }
+                    String model = "None";
+                    try {
+                        model = jsonNode.get("model").asText();
+                    } catch (Exception e) {
+                    }
+
                     return new Car(
                             jsonNode.get("vehicleId").asText(),
+                            model,
                             timestamp,
                             jsonNode.get("hasMoonRoof").asText().equals("true"),
                             jsonNode.get("speed").asDouble(),
@@ -192,7 +199,7 @@ public class StreamingJob {
                 //log input car object
                 .map(event -> {
                             LOG.info("Car: " + event.toString());
-                            return new Tuple3<>(event.getVehicleId(), event, event.getSpeed());
+                            return new Tuple3<>(event.getModel(), event, event.getSpeed());
                         }
                 ).returns(TypeInformation.of(new TypeHint<Tuple3<String, Car, Double>>() {
                 }))
@@ -213,7 +220,7 @@ public class StreamingJob {
                 //note: Following does not represent avg and count seen in the input for last 30 seconds
                 //rather it generates each parallel partitition (keyBy) output avg and count
                 //we need a way to further sum / avg these, this needs further exploration on flink operators
-        
+
                 avgProcessing
                         .map(stats -> stats.getAvg())
 
