@@ -168,7 +168,7 @@ Resources:
                     Data=message,
                     PartitionKey='nokey'
                 )
-                if i % 50 == 0:
+                if i % 4 == 0:
                   time.sleep(1)
 
               clientCW.put_metric_data(Namespace="MyKinesisAnalytics/CarAvgSpeed", MetricData=[{'MetricName': 'PutRecrodCount', 
