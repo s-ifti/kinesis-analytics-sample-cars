@@ -23,7 +23,7 @@
       "MonitoringConfiguration": {
         "ConfigurationType": "CUSTOM",
         "LogLevel": "INFO",
-        "MetricsLevel": "OPERATOR"
+        "MetricsLevel": "APPLICATION"
       },
       "ParallelismConfiguration": {
         "AutoScalingEnabled": true,
