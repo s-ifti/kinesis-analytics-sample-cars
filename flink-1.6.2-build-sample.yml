@@ -247,7 +247,7 @@ Resources:
                 - aws s3 cp --quiet --recursive --exclude '*' --include '*.jar' --exclude 'original-*' ${SourceRepo}*/target s3://${ArtifactBucket}/artifacts/
                 - echo "cd ${SourceRepo}*/deploy-java-app; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} ${KinesisAnalyticsExecRole} ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar ${Parallelism}"
                 - cd ${SourceRepo}*/deploy-java-app; mkdir -p ~/.aws/models/kinesisanalyticsv2/2018-05-23/; cp service-2.json ~/.aws/models/kinesisanalyticsv2/2018-05-23 ; chmod +x ./create-app.sh; ./create-app.sh ${AWS::Region} ${AWS::StackName}-java-app ${AWS::AccountId} ${KinesisAnalyticsExecRole} ${KinesisStream} ${ArtifactBucket.Arn} kinesis-analytics-sample-cars-1.0.jar ${Parallelism}
-                - sleep 30
+                - sleep 120
                 - aws lambda invoke  --function-name ${SampleStreamProducerPutFunction} --invocation-type Event ./invoke.log
                 - cd ..
 
